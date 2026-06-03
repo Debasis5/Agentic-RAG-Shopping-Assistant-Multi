@@ -4,11 +4,7 @@ from src.nodes.guardrail import guardrail_node
 from src.nodes.intent_router import intent_router_node
 from src.nodes.rag import rag_node
 from src.nodes.tool_call import tool_call_node
-
-
-def chitchat_node(state: GraphState) -> GraphState:
-    print("[chitchat] TODO: implement chitchat")
-    return state
+from src.nodes.chitchat import chitchat_node
 
 
 def response_generator_node(state: GraphState) -> GraphState:
