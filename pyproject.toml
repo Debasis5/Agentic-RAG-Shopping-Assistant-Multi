@@ -1,0 +1,18 @@
+[project]
+name = "agents-capstone-project-agentic-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "chromadb>=0.5.0",
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-text-splitters>=1.1.2",
+    "langgraph>=0.2.0",
+    "pypdf>=6.12.2",
+    "python-dotenv>=1.0.0",
+    "reportlab>=4.5.1",
+    "termcolor>=3.3.0",
+]
