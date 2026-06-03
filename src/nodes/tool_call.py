@@ -1,5 +1,6 @@
 import json
 import random
+from functools import lru_cache
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
@@ -70,7 +71,10 @@ def get_return_status(order_id: str) -> str:
 _TOOLS = [get_order_status, track_shipment, get_account_info, get_return_status]
 _TOOL_MAP = {t.name: t for t in _TOOLS}
 
-_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(_TOOLS)
+
+@lru_cache(maxsize=1)
+def _get_llm():
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(_TOOLS)
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +84,7 @@ _llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(_TOOLS)
 def tool_call_node(state: GraphState) -> dict:
     query = state["query"]
 
-    response = _llm.invoke([HumanMessage(content=query)])
+    response = _get_llm().invoke([HumanMessage(content=query)])
 
     if not response.tool_calls:
         print("[tool_call] LLM did not invoke any tool")

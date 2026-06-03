@@ -1,7 +1,11 @@
+from functools import lru_cache
 from langchain_openai import ChatOpenAI
 from src.state import GraphState
 
-_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+@lru_cache(maxsize=1)
+def _get_llm():
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 _SYSTEM_PROMPT = """You are an intent classifier for a customer support assistant.
 
@@ -16,7 +20,7 @@ Respond with exactly one word: rag, tool_call, or chitchat."""
 
 def intent_router_node(state: GraphState) -> dict:
     query = state["query"]
-    response = _llm.invoke([
+    response = _get_llm().invoke([
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": query},
     ])

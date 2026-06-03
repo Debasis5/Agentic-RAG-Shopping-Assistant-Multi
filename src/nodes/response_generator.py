@@ -1,8 +1,12 @@
 import json
+from functools import lru_cache
 from langchain_openai import ChatOpenAI
 from src.state import GraphState
 
-_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+@lru_cache(maxsize=1)
+def _get_llm():
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 _ARIA_PERSONA = """You are Aria, a friendly and knowledgeable customer support agent for ShopEasy, an Indian e-commerce platform.
 
@@ -41,7 +45,7 @@ def response_generator_node(state: GraphState) -> dict:
     # RAG path
     if state.get("retrieved_docs"):
         context = "\n\n".join(state["retrieved_docs"])
-        response = _llm.invoke([
+        response = _get_llm().invoke([
             {"role": "system", "content": _RAG_SYSTEM_PROMPT},
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"},
         ])
@@ -52,7 +56,7 @@ def response_generator_node(state: GraphState) -> dict:
     # Tool call path
     if state.get("tool_output"):
         tool_data = json.dumps(state["tool_output"], indent=2)
-        response = _llm.invoke([
+        response = _get_llm().invoke([
             {"role": "system", "content": _TOOL_SYSTEM_PROMPT},
             {"role": "user", "content": f"Retrieved data:\n{tool_data}\n\nQuestion: {query}"},
         ])
