@@ -98,8 +98,6 @@ agent_response: str
 - `get_account_info`
 - `get_return_status`
 
-**New tool to add:** `coupon_lookup(coupon_code: str)` — mock, returns discount details
-
 **Notebook section:** Step 10 — Order Agent
 
 ---
