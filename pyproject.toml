@@ -20,4 +20,5 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "streamlit>=1.40.0",
     "requests>=2.32.0",
+    "matplotlib>=3.10.9",
 ]
