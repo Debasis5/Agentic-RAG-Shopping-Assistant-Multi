@@ -24,51 +24,63 @@ An agentic Retrieval-Augmented Generation (RAG) system for ShopEasy, an Indian e
 User Query
     │
     ▼
-┌──────────────────────────────────────────────┐
-│                SUPERVISOR GRAPH              │
-│                                              │
-│  ┌───────────┐                               │
-│  │ Guardrail │──── BLOCK ──────────────────► END
-│  └─────┬─────┘                               │
-│        │ PASS                                │
-│        ▼                                     │
-│  ┌──────────────────┐                        │
-│  │ Delegation Router│                        │
-│  └──────┬───────────┘                        │
-│         │                                    │
-│    ┌────┴────┬──────────┬──────────┐         │
-│    │         │          │          │         │
-│    ▼         ▼          ▼          ▼         │
-│  ┌─────┐ ┌───────┐ ┌──────────┐ ┌────────┐  │
-│  │ RAG │ │ Order │ │Escalation│ │chitchat│  │
-│  │agent│ │ agent │ │  agent   │ │(inline)│  │
-│  └──┬──┘ └───┬───┘ └────┬─────┘ └───┬────┘  │
-│     └────────┴──────────┴───────────┘        │
-│                     │                        │
-│                     ▼                        │
-│              ┌───────────┐                   │
-│              │ Synthesis │ (faithfulness      │
-│              │   node    │  check for RAG)   │
-│              └─────┬─────┘                   │
-└────────────────────┼─────────────────────────┘
-                     │
-                     ▼
-               Final Response
+┌─────────────────────────────────────────────────────────┐
+│                    SUPERVISOR GRAPH                     │
+│                                                         │
+│  ┌───────────┐                                          │
+│  │ Guardrail │──── BLOCK ───────────────────────────► END
+│  └─────┬─────┘                                          │
+│        │ PASS                                           │
+│        ▼                                                │
+│  ┌──────────────────┐                                   │
+│  │ Delegation Router│                                   │
+│  └──────┬───────────┘                                   │
+│         │                                               │
+│    ┌────┴──────────────────────────────────────┐        │
+│    │ chitchat ──────────────────────────────►  │        │
+│    │                                           │        │
+│    │          ┌─────────────────────────┐      │        │
+│    ├─ rag ──► │  RAG sub-agent graph    │ ────►│        │
+│    │          │  rag_node               │      │        │
+│    │          │    → response_generator │      ▼        │
+│    │          └─────────────────────────┘  ┌──────────┐ │
+│    │                                       │          │ │
+│    │          ┌─────────────────────────┐  │synthesis │ │
+│    ├─ order ► │  Order sub-agent graph  │► │   node   │ │
+│    │          │  tool_call_node         │  │          │ │
+│    │          │    → response_generator │  └────┬─────┘ │
+│    │          └─────────────────────────┘       │       │
+│    │                                            │       │
+│    │                                            │       │
+│    │          ┌─────────────────────────┐       │       │
+│    └─ escal.► │Escalation sub-agent     │──────►│       │
+│               │  complaint_handler      │               │
+│               │    → human_handoff      │               │
+│               │    → ticket_creation    │               │
+│               └─────────────────────────┘               │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+                     Final Response
 ```
 
-### Sub-agent internals
+> **Synthesis node** — every path converges here before the final response is returned. For the RAG path it acts as a **quality gate**: an LLM faithfulness check validates the answer against the retrieved documents; a `FAIL` verdict replaces the response with a safe fallback. For `order`, `escalation`, and `chitchat` paths the sub-agent output is passed through unchanged — no extra LLM call is made.
 
-| Agent | Internal graph |
+> **Chitchat** is handled by a single node directly inside the supervisor — it has no sub-agent graph, no private state, and no tools. The delegation router sends it straight to `_chitchat_node`, which calls `chitchat_node` and writes the result to `agent_response`, then falls through to synthesis like any other path.
+
+### Sub-agent graphs
+
+| Sub-agent | Internal graph |
 |---|---|
-| **RAG agent** | `rag_node → response_generator_node → END` |
-| **Order agent** | `tool_call_node → response_generator_node → END` |
-| **Escalation agent** | `complaint_handler → human_handoff → ticket_creation → END` |
+| **RAG** | `rag_node → response_generator_node → END` |
+| **Order** | `tool_call_node → response_generator_node → END` |
+| **Escalation** | `complaint_handler → human_handoff → ticket_creation → END` |
 
 ### Key design decisions
 
 - **Guardrail runs once** in the supervisor — sub-agents never receive blocked queries.
 - **Sub-agents are independent** `StateGraph` instances — changes to one agent do not affect others.
-- **Chitchat is inline** in the supervisor (no dedicated sub-agent graph) — it needs no state or tools.
+- **Chitchat is a supervisor node, not a sub-agent** — it needs no private state or tools, so a dedicated graph would add overhead with no benefit.
 - **Sub-agents are invoked via `.invoke()`** wrapper nodes (not nested LangGraph subgraphs) — keeps SSE streaming straightforward.
 - **Lazy LLM initialisation** — every node uses `@lru_cache(maxsize=1)` on a `_get_llm()` factory, because `src/graph.py` is imported before `load_dotenv()` runs.
 
