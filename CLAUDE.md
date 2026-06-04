@@ -30,23 +30,83 @@ No test suite or linter is configured in this project.
 
 This is a two-process application: a **FastAPI backend** (`api.py`) and a **Streamlit frontend** (`streamlit_app.py`). They communicate via HTTP — the frontend POSTs to `/chat` and receives a Server-Sent Events stream of tokens.
 
-### LangGraph pipeline (`src/`)
+### Target architecture: supervisor-orchestrator multi-agent (`src/`)
 
-The core logic is a LangGraph `StateGraph` built in `src/graph.py`. Every request flows through the same pipeline:
+> **Migration in progress** — see `PLANNING.md` for step-by-step status.
+> The original single-graph pipeline is being replaced with a supervisor + sub-agent design.
 
 ```
-guardrail → [BLOCK → END] or [PASS → intent_router]
-intent_router → rag | tool_call | chitchat
-rag / tool_call / chitchat → response_generator → END
+User query
+    │
+    ▼
+Supervisor graph (src/supervisor/graph.py)
+    ├── guardrail node          ← safety + scope check (BLOCK → END)
+    └── delegation_router node  ← which agent handles this?
+            │
+            ├──► RAG agent (src/agents/rag_agent.py)
+            │       └── rag_node → response_generator (RAG path)
+            │
+            ├──► Order agent (src/agents/order_agent.py)
+            │       └── tool_call_node → response_generator (tool path)
+            │
+            ├──► Escalation agent (src/agents/escalation_agent.py)
+            │       └── complaint_handler → human_handoff → ticket_creation
+            │
+            └──► chitchat (inline in supervisor, no sub-agent)
+                    │
+                    ▼
+            synthesis node  ← merge result + faithfulness check → END
 ```
 
-`GraphState` (defined in `src/state.py`) is the single shared dict passed between all nodes. Key fields: `query`, `intent`, `retrieved_docs`, `tool_output`, `guardrail_decision`, `final_response`.
+**Key design decisions:**
+- Guardrail lives in the supervisor only — runs once before delegation, sub-agents never see blocked queries.
+- Each sub-agent is an independent `StateGraph` with its own state — changes to one agent don't affect others.
+- RAG stays as bare vector lookup for now (top-3 ChromaDB retrieval). Query rewriter + reranker will be added later inside `rag_agent.py` without touching the supervisor.
+- Chitchat is handled inline by the supervisor (no dedicated sub-agent graph needed).
+- The existing node files in `src/nodes/` are reused as-is inside the sub-agent graphs — no rewrites.
 
-**Critical pattern — lazy LLM initialisation:** Every node file uses `@lru_cache(maxsize=1)` on a `_get_llm()` / `_get_retriever()` factory instead of creating `ChatOpenAI` / `OpenAIEmbeddings` at module level. This is required because `src/graph.py` is imported before `load_dotenv()` runs in `api.py`. Breaking this pattern will cause `openai.OpenAIError: Missing credentials` on startup.
+### State design
+
+| State class | File | Used by |
+|---|---|---|
+| `SupervisorState` | `src/supervisor/state.py` | Supervisor graph |
+| `RagAgentState` | `src/agents/rag_agent.py` | RAG agent graph |
+| `OrderAgentState` | `src/agents/order_agent.py` | Order agent graph |
+| `EscalationAgentState` | `src/agents/escalation_agent.py` | Escalation agent graph |
+
+### File layout (target)
+
+```
+src/
+  nodes/                        ← existing node files, reused as-is
+    guardrail.py
+    rag.py
+    tool_call.py
+    chitchat.py
+    response_generator.py
+    intent_router.py            ← retired after migration (delegation_router replaces it)
+  agents/
+    __init__.py
+    rag_agent.py                ← RAG sub-agent graph
+    order_agent.py              ← Order sub-agent graph
+    escalation_agent.py         ← Escalation sub-agent graph
+  supervisor/
+    __init__.py
+    state.py                    ← SupervisorState
+    graph.py                    ← Supervisor graph (entry point)
+    delegation_router.py        ← LLM classifier: rag | order | escalation | chitchat
+    synthesis.py                ← Merge sub-agent result + faithfulness check
+  graph.py                      ← re-exports build_supervisor_graph() for backwards compat
+  state.py                      ← re-exports SupervisorState for backwards compat
+```
+
+**Critical pattern — lazy LLM initialisation:** Every node file uses `@lru_cache(maxsize=1)` on a `_get_llm()` / `_get_retriever()` factory instead of creating `ChatOpenAI` / `OpenAIEmbeddings` at module level. This is required because `src/graph.py` is imported before `load_dotenv()` runs in `api.py`. Breaking this pattern will cause `openai.OpenAIError: Missing credentials` on startup. **All new nodes and agents must follow this pattern.**
 
 ### Streaming (api.py)
 
 `POST /chat` uses `graph.astream_events(state, version="v2")` to stream events. Only `on_chat_model_stream` events from nodes `response_generator` and `chitchat` are forwarded as tokens — guardrail and intent_router LLM outputs are filtered out by checking `event["metadata"]["langgraph_node"]`. Guardrail blocks are emitted as a single token from the `on_chain_end` event of the `guardrail` node.
+
+After migration, the streamed node names will change — `synthesis` replaces `response_generator` as the primary streaming node.
 
 ### Vector store
 
