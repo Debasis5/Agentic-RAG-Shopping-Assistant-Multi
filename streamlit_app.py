@@ -271,8 +271,8 @@ Aria is your AI shopping assistant, powered by ShopEasy's knowledge base.
 <div style="font-size:0.78rem;">
 <strong>What I can do:</strong>
 <ul style="margin-top:0.3rem; padding-left:1.1rem;">
-  <li>📦 Track orders &amp; shipments</li>
-  <li>🔄 Help with returns &amp; refunds</li>
+  <li style="white-space:nowrap;">📦 Track orders &amp; shipments <sup style="font-size:0.6rem; color:#1a73e8; font-weight:600; letter-spacing:0.5px;">beta</sup></li>
+  <li style="white-space:nowrap;">🔄 Help with returns &amp; refunds <sup style="font-size:0.6rem; color:#1a73e8; font-weight:600; letter-spacing:0.5px;">beta</sup></li>
   <li>💳 Answer payment questions</li>
   <li>📋 Explain store policies</li>
   <li>🙋 General account help</li>
