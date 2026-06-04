@@ -1,15 +1,18 @@
 # ShopEasy Agentic RAG — Aria Customer Support
 
-An agentic Retrieval-Augmented Generation (RAG) system for ShopEasy, an Indian e-commerce platform. Aria is a context-aware AI customer support agent built with LangGraph, served via a FastAPI streaming backend, and presented through a Streamlit chat interface.
+An agentic Retrieval-Augmented Generation (RAG) system for ShopEasy, an Indian e-commerce platform. **Aria** is a context-aware AI customer support agent built on a **supervisor + multi-agent** LangGraph architecture, served via a FastAPI streaming backend, and presented through a Streamlit chat interface.
 
 ---
 
 ## Features
 
-- **Safety guardrails** — classifies and blocks harmful, out-of-scope, or advice-seeking queries before they reach the LLM
-- **Intent routing** — automatically routes queries to the right handler: RAG, live tool calls, or chitchat
-- **RAG pipeline** — retrieves relevant policy excerpts from a ChromaDB vector store using OpenAI embeddings
-- **Live tool calls** — fetches order status, shipment tracking, account info, and return status via function calling
+- **Supervisor-orchestrated multi-agent design** — a central supervisor graph delegates queries to independent specialised sub-agents
+- **Safety guardrails** — classifies and blocks harmful, out-of-scope, or advice-seeking queries before they reach any sub-agent
+- **Smart delegation router** — LLM classifier routes each query to the right agent: RAG, Order, Escalation, or chitchat
+- **RAG agent** — retrieves relevant policy excerpts from a ChromaDB vector store and synthesises a grounded answer
+- **Order agent** — handles live data lookups (order status, shipment tracking, account info, return status) via function calling
+- **Escalation agent** — classifies complaints, generates empathetic handoff messages, and creates support tickets with unique IDs
+- **Faithfulness check** — synthesis node validates RAG answers against retrieved documents before returning them
 - **Streaming responses** — tokens stream token-by-token from FastAPI to the Streamlit UI via Server-Sent Events (SSE)
 - **Aria persona** — consistent, warm, mobile-optimised responses in British English with Indian currency formatting
 
@@ -21,35 +24,101 @@ An agentic Retrieval-Augmented Generation (RAG) system for ShopEasy, an Indian e
 User Query
     │
     ▼
-┌─────────────┐
-│  Guardrail  │──── BLOCK ──▶ Blocked response (PASS-through)
-└──────┬──────┘
-       │ PASS
-       ▼
-┌──────────────┐
-│ Intent Router│
-└──────┬───────┘
-       ├── rag ──────▶ RAG Node ──────▶ Response Generator ──▶ Final Response
-       ├── tool_call ▶ Tool Call Node ▶ Response Generator ──▶ Final Response
-       └── chitchat ─▶ Chitchat Node ─────────────────────────▶ Final Response
+┌──────────────────────────────────────────────┐
+│                SUPERVISOR GRAPH              │
+│                                              │
+│  ┌───────────┐                               │
+│  │ Guardrail │──── BLOCK ──────────────────► END
+│  └─────┬─────┘                               │
+│        │ PASS                                │
+│        ▼                                     │
+│  ┌──────────────────┐                        │
+│  │ Delegation Router│                        │
+│  └──────┬───────────┘                        │
+│         │                                    │
+│    ┌────┴────┬──────────┬──────────┐         │
+│    │         │          │          │         │
+│    ▼         ▼          ▼          ▼         │
+│  ┌─────┐ ┌───────┐ ┌──────────┐ ┌────────┐  │
+│  │ RAG │ │ Order │ │Escalation│ │chitchat│  │
+│  │agent│ │ agent │ │  agent   │ │(inline)│  │
+│  └──┬──┘ └───┬───┘ └────┬─────┘ └───┬────┘  │
+│     └────────┴──────────┴───────────┘        │
+│                     │                        │
+│                     ▼                        │
+│              ┌───────────┐                   │
+│              │ Synthesis │ (faithfulness      │
+│              │   node    │  check for RAG)   │
+│              └─────┬─────┘                   │
+└────────────────────┼─────────────────────────┘
+                     │
+                     ▼
+               Final Response
 ```
 
-### Components
+### Sub-agent internals
 
-| Component | Description |
+| Agent | Internal graph |
 |---|---|
-| `api.py` | FastAPI app — `POST /chat` streams SSE tokens, `GET /health` |
-| `streamlit_app.py` | Streamlit frontend — Aria chat UI with streaming support |
-| `src/graph.py` | LangGraph `StateGraph` — wires nodes and routing logic |
-| `src/state.py` | `GraphState` TypedDict — shared state across all nodes |
-| `src/nodes/guardrail.py` | Safety classifier — PASS / BLOCK_HARMFUL / BLOCK_ADVICE / BLOCK_SCOPE |
-| `src/nodes/intent_router.py` | Intent classifier — rag / tool_call / chitchat |
+| **RAG agent** | `rag_node → response_generator_node → END` |
+| **Order agent** | `tool_call_node → response_generator_node → END` |
+| **Escalation agent** | `complaint_handler → human_handoff → ticket_creation → END` |
+
+### Key design decisions
+
+- **Guardrail runs once** in the supervisor — sub-agents never receive blocked queries.
+- **Sub-agents are independent** `StateGraph` instances — changes to one agent do not affect others.
+- **Chitchat is inline** in the supervisor (no dedicated sub-agent graph) — it needs no state or tools.
+- **Sub-agents are invoked via `.invoke()`** wrapper nodes (not nested LangGraph subgraphs) — keeps SSE streaming straightforward.
+- **Lazy LLM initialisation** — every node uses `@lru_cache(maxsize=1)` on a `_get_llm()` factory, because `src/graph.py` is imported before `load_dotenv()` runs.
+
+---
+
+## Components
+
+| File | Description |
+|---|---|
+| `api.py` | FastAPI app — `POST /chat` streams SSE tokens, `GET /health`, `POST /debug-events` |
+| `streamlit_app.py` | Streamlit frontend — Aria chat UI with streaming support and intent badges |
+| `main.py` | CLI entrypoint — run a single query without the API/UI |
+| `src/supervisor/graph.py` | Supervisor `StateGraph` — entry point, wires all agents and routing |
+| `src/supervisor/state.py` | `SupervisorState` TypedDict — shared state across the supervisor |
+| `src/supervisor/delegation_router.py` | LLM classifier — maps queries to `rag \| order \| escalation \| chitchat` |
+| `src/supervisor/synthesis.py` | Merges sub-agent result; runs faithfulness check for the RAG path |
+| `src/agents/rag_agent.py` | RAG sub-agent graph + `RagAgentState` |
+| `src/agents/order_agent.py` | Order sub-agent graph + `OrderAgentState` |
+| `src/agents/escalation_agent.py` | Escalation sub-agent graph + `EscalationAgentState` |
+| `src/nodes/guardrail.py` | Safety classifier — `PASS / BLOCK_HARMFUL / BLOCK_ADVICE / BLOCK_SCOPE` |
 | `src/nodes/rag.py` | ChromaDB retriever — top-3 semantic search over policy docs |
 | `src/nodes/tool_call.py` | Function calling — order, shipment, account, return tools |
-| `src/nodes/chitchat.py` | Conversational response node |
+| `src/nodes/chitchat.py` | Conversational response node (used inline by the supervisor) |
 | `src/nodes/response_generator.py` | Final answer synthesis using Aria persona |
+| `src/graph.py` | Re-exports `build_supervisor_graph()` for backwards compatibility |
+| `src/state.py` | Re-exports `SupervisorState` for backwards compatibility |
 | `pipelines/ingest_docs.py` | One-time pipeline — chunks and embeds PDFs into ChromaDB |
 | `scripts/generate_docs.py` | One-time script — generates 5 ShopEasy policy PDFs |
+
+---
+
+## State design
+
+| State class | File | Used by |
+|---|---|---|
+| `SupervisorState` | `src/supervisor/state.py` | Supervisor graph |
+| `RagAgentState` | `src/agents/rag_agent.py` | RAG agent graph |
+| `OrderAgentState` | `src/agents/order_agent.py` | Order agent graph |
+| `EscalationAgentState` | `src/agents/escalation_agent.py` | Escalation agent graph |
+
+`SupervisorState` fields:
+
+```python
+query: str
+messages: Annotated[list, add_messages]
+guardrail_decision: str   # "PASS" | "BLOCK"
+agent_outcome: str        # "rag" | "order" | "escalation" | "chitchat"
+agent_response: str       # raw response from the sub-agent
+final_response: str       # after synthesis
+```
 
 ---
 
@@ -69,29 +138,39 @@ User Query
 ## Project Structure
 
 ```
-├── api.py                  # FastAPI backend
-├── streamlit_app.py        # Streamlit frontend
-├── main.py                 # CLI entrypoint
-├── pyproject.toml          # Project dependencies
-├── requirements.txt        # Pip-compatible dependencies
-├── .env                    # Environment variables (not committed)
+├── api.py                      # FastAPI backend
+├── streamlit_app.py            # Streamlit frontend
+├── main.py                     # CLI entrypoint
+├── pyproject.toml              # Project dependencies
+├── .env                        # Environment variables (not committed)
 ├── data/
-│   └── docs/               # Generated policy PDFs
-├── chroma_db/              # ChromaDB vector store
+│   └── docs/                   # Generated policy PDFs
+├── chroma_db/                  # ChromaDB vector store (local)
+├── notebooks/
+│   ├── test_notebook.ipynb     # Original single-agent test notebook (preserved)
+│   └── test_notebook_multi.ipynb # Multi-agent end-to-end test notebook
 ├── pipelines/
-│   └── ingest_docs.py      # Document ingestion pipeline
+│   └── ingest_docs.py          # Document ingestion pipeline
 ├── scripts/
-│   └── generate_docs.py    # Policy PDF generator
+│   └── generate_docs.py        # Policy PDF generator
 └── src/
-    ├── state.py            # LangGraph state definition
-    ├── graph.py            # Graph construction
-    └── nodes/
-        ├── guardrail.py
-        ├── intent_router.py
-        ├── rag.py
-        ├── tool_call.py
-        ├── chitchat.py
-        └── response_generator.py
+    ├── graph.py                # Re-exports build_supervisor_graph()
+    ├── state.py                # Re-exports SupervisorState
+    ├── nodes/
+    │   ├── guardrail.py
+    │   ├── rag.py
+    │   ├── tool_call.py
+    │   ├── chitchat.py
+    │   └── response_generator.py
+    ├── supervisor/
+    │   ├── graph.py            # Supervisor graph (entry point)
+    │   ├── state.py            # SupervisorState
+    │   ├── delegation_router.py
+    │   └── synthesis.py
+    └── agents/
+        ├── rag_agent.py
+        ├── order_agent.py
+        └── escalation_agent.py
 ```
 
 ---
@@ -108,7 +187,7 @@ User Query
 
 ```bash
 git clone <repo-url>
-cd agents-capstone-project-agentic-rag
+cd agents-capstone-project-agentic-rag-multi
 uv sync
 ```
 
@@ -142,7 +221,7 @@ uv run python pipelines/ingest_docs.py
 uv run uvicorn api:app --reload --port 8000
 ```
 
-### Start the Streamlit frontend
+### Start the Streamlit frontend (separate terminal)
 
 ```bash
 uv run streamlit run streamlit_app.py
@@ -150,30 +229,44 @@ uv run streamlit run streamlit_app.py
 
 Open `http://localhost:8501` in your browser.
 
-### API endpoints
+### CLI (no API/UI required)
+
+```bash
+uv run python main.py
+```
+
+---
+
+## API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/health` | Liveness check |
 | `POST` | `/chat` | Stream a response — body: `{"query": "..."}` |
+| `POST` | `/debug-events` | Dump all `astream_events` for a query (dev/debug) |
 
 The `/chat` endpoint returns Server-Sent Events with two frame types:
 
 ```json
-// Token frame (streamed during generation)
+// Token frame (one or more, streamed during generation)
 {"type": "token", "content": "Hello"}
 
-// Done frame (sent after final token)
-{"type": "done", "intent": "chitchat", "guardrail_decision": "PASS"}
+// Done frame (sent after the final token)
+{"type": "done", "agent_outcome": "rag", "guardrail_decision": "PASS"}
 ```
 
 ---
 
-## CLI Usage
+## Delegation Router
 
-```bash
-uv run python main.py
-```
+The delegation router classifies each passing query into one of four intents:
+
+| Intent | Trigger |
+|---|---|
+| `rag` | Policy / FAQ questions — returns, payments, shipping, product conditions, account policies |
+| `order` | Specific order / shipment / return / account status — needs live data |
+| `escalation` | Complaints, damaged items, wrong items, requests for a human agent |
+| `chitchat` | Greetings, small talk, thanks, purely conversational |
 
 ---
 
@@ -185,6 +278,27 @@ uv run python main.py
 | `BLOCK_HARMFUL` | Hacking, fraud, illegal activity, abuse |
 | `BLOCK_ADVICE` | Medical, legal, or financial advice |
 | `BLOCK_SCOPE` | Competitor comparisons, price predictions, unrelated topics |
+
+Guardrail blocks are emitted immediately — the query never reaches the delegation router or sub-agents.
+
+---
+
+## Escalation Agent
+
+When a query is routed to the escalation agent it runs three nodes in sequence:
+
+1. **`complaint_handler`** — LLM classifies the complaint into `damaged_item | wrong_item | late_delivery | other`
+2. **`human_handoff`** — generates an empathetic handoff message with support number (1800-3000-9009) and estimated wait time
+3. **`ticket_creation`** — appends a mock ticket ID (`TKT-XXXXXX`) to the response
+
+---
+
+## Synthesis & Faithfulness Check
+
+After every sub-agent returns, the `synthesis` node:
+
+- **Non-RAG paths** (`order`, `escalation`, `chitchat`): passes `agent_response` through directly as `final_response`.
+- **RAG path**: runs an LLM faithfulness check — if the answer contains fabricated or unsupported claims (`FAIL`), a safe fallback response is returned instead.
 
 ---
 
@@ -208,7 +322,7 @@ data/docs/*.pdf
 │ Stage 1 · LOAD                           │
 │  PyPDFDirectoryLoader                    │
 │  · Reads all PDFs, merges pages per doc  │
-│  · Strips header metadata per document:  │
+│  · Extracts metadata per document:       │
 │    title, version, effective_date,       │
 │    department                            │
 └─────────────────┬────────────────────────┘
