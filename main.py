@@ -1,22 +1,21 @@
 from dotenv import load_dotenv
-from src.graph import build_graph
+from src.supervisor.graph import build_supervisor_graph
 
 load_dotenv()
 
 
 def run(query: str):
-    graph = build_graph()
+    graph = build_supervisor_graph()
     initial_state = {
         "query": query,
         "messages": [],
-        "intent": "",
-        "retrieved_docs": [],
-        "tool_output": None,
         "guardrail_decision": "",
+        "agent_outcome": "",
+        "agent_response": "",
         "final_response": "",
     }
     result = graph.invoke(initial_state)
-    print(f"\nFinal response: {result['final_response']}")
+    print(f"\nAgent: {result['agent_outcome']}  |  Final response: {result['final_response']}")
     return result
 
 

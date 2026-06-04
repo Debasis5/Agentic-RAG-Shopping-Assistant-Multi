@@ -1,0 +1,48 @@
+from functools import lru_cache
+from langchain_openai import ChatOpenAI
+
+
+@lru_cache(maxsize=1)
+def _get_llm():
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+
+_FAITHFULNESS_PROMPT = """You are a quality-check assistant for ShopEasy's support system.
+
+You will be given a customer question and a draft answer generated from a knowledge base.
+Check whether the answer is faithful — it should only state facts that are grounded in the answer itself, without fabricating policy details.
+
+If the answer is faithful, respond with exactly: PASS
+If the answer contains fabricated or unsupported claims, respond with exactly: FAIL
+
+Respond with one word only: PASS or FAIL."""
+
+_FALLBACK_RESPONSE = (
+    "I'm sorry, I wasn't able to provide a verified answer to your question. "
+    "Please contact ShopEasy support at 1800-3000-9009 for accurate policy information."
+)
+
+
+def synthesis_node(state: dict) -> dict:
+    agent_outcome = state.get("agent_outcome", "")
+    agent_response = state.get("agent_response", "")
+
+    # Non-RAG paths pass through directly
+    if agent_outcome != "rag":
+        print(f"[synthesis] pass-through for agent_outcome={agent_outcome!r}")
+        return {"final_response": agent_response}
+
+    # RAG path — run faithfulness check
+    query = state["query"]
+    check = _get_llm().invoke([
+        {"role": "system", "content": _FAITHFULNESS_PROMPT},
+        {"role": "user", "content": f"Question: {query}\n\nAnswer: {agent_response}"},
+    ])
+    verdict = check.content.strip().upper()
+    print(f"[synthesis] faithfulness verdict={verdict!r}")
+
+    if verdict == "PASS":
+        return {"final_response": agent_response}
+
+    print("[synthesis] faithfulness FAIL — returning fallback")
+    return {"final_response": _FALLBACK_RESPONSE}

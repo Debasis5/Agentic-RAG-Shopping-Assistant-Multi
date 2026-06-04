@@ -12,16 +12,16 @@ The original `notebooks/test_notebook.ipynb` is preserved and untouched.
 
 | Step | What | Status |
 |------|------|--------|
-| 1 | SupervisorState + sub-agent states | [ ] |
-| 2 | RAG agent graph (thin wrapper around existing rag_node) | [ ] |
-| 3 | Order agent graph (thin wrapper around existing tool_call_node) | [ ] |
-| 4 | Escalation agent graph (complaint handler + human handoff + ticket creation) | [ ] |
-| 5 | Delegation router node (LLM classifier replacing intent_router) | [ ] |
-| 6 | Supervisor synthesis node (merge result + faithfulness check) | [ ] |
-| 7 | Supervisor graph (guardrail + delegation_router + sub-agents + synthesis) | [ ] |
-| 8 | Wire supervisor into api.py and main.py | [ ] |
-| 9 | Update streamlit_app.py badge labels for new agent names | [ ] |
-| 10 | End-to-end test: all paths through supervisor in notebook | [ ] |
+| 1 | SupervisorState + sub-agent states | [x] |
+| 2 | RAG agent graph (thin wrapper around existing rag_node) | [x] |
+| 3 | Order agent graph (thin wrapper around existing tool_call_node) | [x] |
+| 4 | Escalation agent graph (complaint handler + human handoff + ticket creation) | [x] |
+| 5 | Delegation router node (LLM classifier replacing intent_router) | [x] |
+| 6 | Supervisor synthesis node (merge result + faithfulness check) | [x] |
+| 7 | Supervisor graph (guardrail + delegation_router + sub-agents + synthesis) | [x] |
+| 8 | Wire supervisor into api.py and main.py | [x] |
+| 9 | Update streamlit_app.py badge labels for new agent names | [x] |
+| 10 | End-to-end test: all paths through supervisor in notebook | [x] |
 
 ---
 

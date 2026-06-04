@@ -205,10 +205,11 @@ st.markdown("""
     font-weight: 600;
     vertical-align: middle;
   }
-  .badge-rag   { background: #e8f4fd; color: #0972d3; }
-  .badge-tool  { background: #f0faf4; color: #1a7f37; }
-  .badge-chat  { background: #fdf8e8; color: #a04800; }
-  .badge-block { background: #fde8e8; color: #c0392b; }
+  .badge-rag        { background: #e8f4fd; color: #0972d3; }
+  .badge-tool       { background: #f0faf4; color: #1a7f37; }
+  .badge-escalation { background: #fdf0f8; color: #8e24aa; }
+  .badge-chat       { background: #fdf8e8; color: #a04800; }
+  .badge-block      { background: #fde8e8; color: #c0392b; }
 
   /* Chat input */
   div[data-testid="stChatInput"] textarea {
@@ -329,15 +330,16 @@ st.markdown(f"""
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def badge_html(intent: str, guardrail: str) -> str:
+def badge_html(agent_outcome: str, guardrail: str) -> str:
     if guardrail == "BLOCK":
         return '<span class="badge badge-block">⛔ blocked</span>'
     mapping = {
-        "rag":       ("badge-rag",  "📚 policy"),
-        "tool_call": ("badge-tool", "🔧 live data"),
-        "chitchat":  ("badge-chat", "💬 chat"),
+        "rag":        ("badge-rag",        "📚 policy"),
+        "order":      ("badge-tool",       "📦 order"),
+        "escalation": ("badge-escalation", "🚨 escalation"),
+        "chitchat":   ("badge-chat",       "💬 chat"),
     }
-    cls, label = mapping.get(intent, ("badge-chat", "💬 chat"))
+    cls, label = mapping.get(agent_outcome, ("badge-chat", "💬 chat"))
     return f'<span class="badge {cls}">{label}</span>'
 
 
@@ -393,7 +395,7 @@ if not st.session_state.messages:
 for msg in st.session_state.messages:
     render_message(
         msg["role"], msg["content"],
-        msg.get("intent", ""), msg.get("guardrail", ""),
+        msg.get("agent_outcome", ""), msg.get("guardrail", ""),
     )
 
 
@@ -417,7 +419,7 @@ def stream_response(query: str):
                     yield "", payload
     except requests.exceptions.ConnectionError:
         yield "⚠️ Cannot reach the API. Make sure `uvicorn api:app` is running on port 8000.", {
-            "type": "done", "intent": "", "guardrail_decision": ""
+            "type": "done", "agent_outcome": "", "guardrail_decision": ""
         }
 
 
@@ -455,7 +457,7 @@ if prompt := st.chat_input("Ask Aria anything about ShopEasy…"):
 
     for token, meta in stream_response(prompt):
         if meta is not None:
-            intent_val = meta.get("intent", "")
+            intent_val = meta.get("agent_outcome", "")
             guardrail_val = meta.get("guardrail_decision", "")
         else:
             accumulated += token
@@ -481,7 +483,7 @@ if prompt := st.chat_input("Ask Aria anything about ShopEasy…"):
     st.session_state.messages.append({
         "role": "assistant",
         "content": accumulated,
-        "intent": intent_val,
+        "agent_outcome": intent_val,
         "guardrail": guardrail_val,
     })
 

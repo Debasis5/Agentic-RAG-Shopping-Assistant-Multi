@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from src.graph import build_graph
-from src.state import GraphState
+from src.supervisor.graph import build_supervisor_graph
+from src.supervisor.state import SupervisorState
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ _graph = None
 def get_graph():
     global _graph
     if _graph is None:
-        _graph = build_graph()
+        _graph = build_supervisor_graph()
     return _graph
 
 
@@ -38,61 +38,76 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    initial_state: GraphState = {
+@app.post("/debug-events")
+async def debug_events(request: ChatRequest):
+    """Dump all astream_events for a query so we can inspect event names/kinds."""
+    initial_state: SupervisorState = {
         "query": request.query,
         "messages": [],
-        "intent": "",
-        "retrieved_docs": [],
-        "tool_output": None,
         "guardrail_decision": "",
+        "agent_outcome": "",
+        "agent_response": "",
+        "final_response": "",
+    }
+    events = []
+    async for event in get_graph().astream_events(initial_state, version="v2"):
+        kind = event.get("event")
+        name = event.get("name", "")
+        node = event.get("metadata", {}).get("langgraph_node", "")
+        output = event.get("data", {}).get("output")
+        entry = {"kind": kind, "name": name, "node": node}
+        if isinstance(output, dict):
+            entry["output_keys"] = list(output.keys())
+            if output.get("final_response"):
+                entry["final_response_preview"] = output["final_response"][:80]
+        events.append(entry)
+    return {"events": events}
+
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    initial_state: SupervisorState = {
+        "query": request.query,
+        "messages": [],
+        "guardrail_decision": "",
+        "agent_outcome": "",
+        "agent_response": "",
         "final_response": "",
     }
 
     async def event_stream():
-        final_response = ""
-        intent = ""
+        agent_outcome = ""
         guardrail_decision = ""
 
-        # Stream graph events; we capture the final_response from the last node
-        # that sets it, then stream its text token-by-token via a second LLM call.
-        # For nodes that already have final_response (guardrail blocks, chitchat),
-        # we stream the pre-built string directly.
         async for event in get_graph().astream_events(initial_state, version="v2"):
             kind = event.get("event")
-            name = event.get("name", "")
 
-            # Capture metadata from node outputs
             if kind == "on_chain_end" and event.get("data", {}).get("output"):
                 output = event["data"]["output"]
+                name = event.get("name", "")
                 node = event.get("metadata", {}).get("langgraph_node", "")
                 if isinstance(output, dict):
-                    if output.get("intent"):
-                        intent = output["intent"]
+                    if output.get("agent_outcome"):
+                        agent_outcome = output["agent_outcome"]
                     if output.get("guardrail_decision"):
                         guardrail_decision = output["guardrail_decision"]
-                    # Guardrail block: stream the pre-built response text directly
+
+                    # Guardrail block — emit pre-built response directly
                     if node == "guardrail" and output.get("final_response"):
-                        blocked_text = output["final_response"]
-                        payload = json.dumps({"type": "token", "content": blocked_text})
+                        payload = json.dumps({"type": "token", "content": output["final_response"]})
                         yield f"data: {payload}\n\n"
 
-            # Stream tokens only from nodes that produce the final response
-            if kind == "on_chat_model_stream":
-                node = event.get("metadata", {}).get("langgraph_node", "")
-                if node not in ("response_generator", "chitchat"):
-                    continue
-                chunk = event.get("data", {}).get("chunk")
-                if chunk and hasattr(chunk, "content") and chunk.content:
-                    token = chunk.content
-                    payload = json.dumps({"type": "token", "content": token})
-                    yield f"data: {payload}\n\n"
+                    # Synthesis node end — emit the final response once.
+                    # Guard on name=="synthesis" to skip the top-level LangGraph
+                    # on_chain_end which also carries final_response.
+                    if node == "synthesis" and name == "synthesis" and output.get("final_response"):
+                        payload = json.dumps({"type": "token", "content": output["final_response"]})
+                        yield f"data: {payload}\n\n"
 
         # Send final metadata
         meta = json.dumps({
             "type": "done",
-            "intent": intent,
+            "agent_outcome": agent_outcome,
             "guardrail_decision": guardrail_decision,
         })
         yield f"data: {meta}\n\n"
