@@ -204,10 +204,12 @@ Update `badge_html()` mapping:
 "chitchat":  ("badge-chat", "💬 chat"),
 
 # new
-"rag":        ("badge-rag",   "📚 policy"),
-"order":      ("badge-tool",  "📦 order"),
+"rag":        ("badge-rag",        "📚 policy"),
+"order":      ("badge-tool",       "📦 order"),
 "escalation": ("badge-escalation", "🚨 escalation"),
-"chitchat":   ("badge-chat",  "💬 chat"),
+"chitchat":   ("badge-chat",       "💬 chat"),
+# guardrail check runs first (unchanged):
+guardrail_decision == "BLOCK": ("badge-block", "⛔ blocked")
 ```
 
 Add `.badge-escalation` CSS rule alongside existing badge styles.
