@@ -1,0 +1,277 @@
+{
+  "run_at": "2026-06-05T17:31:22.168417",
+  "threshold": 0.7,
+  "judge_model": "gpt-5.4-mini",
+  "test_cases": [
+    {
+      "input": "What is the return window for electronics purchased on ShopEasy?",
+      "expected_output": "Electronics purchased on ShopEasy have a 7-day return window from the date of delivery.",
+      "actual_output": "The return window for electronics purchased on ShopEasy is 10 days from the date of delivery, provided they are unused and in their original packaging.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "Which items are non-returnable on ShopEasy?",
+      "expected_output": "Non-returnable items on ShopEasy include perishable goods, digital products after download, personalised or customised items, hygiene products once opened (such as innerwear and swimwear), and hazardous materials.",
+      "actual_output": "The following items are non-returnable on ShopEasy:\n\n- Digital products, software licenses, and downloadable content.\n- Hazardous materials and items with safety seals broken.\n- Perishable goods beyond the 2-day window.\n- Customised or personalised products.\n- Items explicitly marked as non-returnable on the product listing.\n- Underwear, lingerie, and swimwear for hygiene reasons.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What is the free shipping threshold on ShopEasy?",
+      "expected_output": "ShopEasy offers free shipping on orders above Rs. 499. Orders below Rs. 499 attract a shipping fee of Rs. 40.",
+      "actual_output": "The free shipping threshold on ShopEasy is for orders above Rs. 499.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What happens if a ShopEasy delivery attempt fails?",
+      "expected_output": "ShopEasy makes up to 3 delivery attempts. If all three attempts fail, the package is returned to the seller and a refund is initiated.",
+      "actual_output": "If a ShopEasy delivery attempt fails, the company will make up to 3 delivery attempts on consecutive business days. After 3 failed attempts, the package will be returned to the seller, and a refund will be initiated. If you need to reschedule delivery, you can contact customer support or update your delivery instructions in the app.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What is the minimum purchase amount required to use EMI on ShopEasy?",
+      "expected_output": "EMI is available on purchases above Rs. 3,000 for eligible credit and debit cards. EMI tenure options range from 3 to 24 months depending on the bank and card type.",
+      "actual_output": "The minimum purchase amount required to use EMI on ShopEasy is Rs. 3,000 for eligible credit and debit cards.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "How long does it take for a failed payment reversal to appear on ShopEasy?",
+      "expected_output": "If a payment fails but the amount is debited, it will be automatically reversed within 5–7 business days by your bank. If the reversal does not appear within 7 business days, you should contact your bank.",
+      "actual_output": "If a payment fails but the amount is debited from your account, the reversal will be automatically processed by your bank within 5–7 business days. If the reversal does not appear within that time, please contact your bank.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "How do I recover my ShopEasy account password?",
+      "expected_output": "To recover your ShopEasy password, click 'Forgot your password?' on the sign-in page. An OTP will be sent to your registered email or mobile number. Passwords must be at least 8 characters and include a mix of letters and numbers. Reset links expire within 15 minutes of issuance.",
+      "actual_output": "To recover your ShopEasy account password, please visit the login page and click on the \"Forgot Password?\" link. Follow the prompts to reset your password using your registered email address or mobile number. If you need further assistance, feel free to contact ShopEasy Customer Support at 1800-3000-9009 or through the Help page on ShopEasy.in.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What happens to my data when I delete my ShopEasy account?",
+      "expected_output": "Account deletion on ShopEasy is permanent and cannot be undone. All order history, wish lists, reviews, and saved data will be permanently removed. Active orders must be completed or cancelled before deletion is processed.",
+      "actual_output": "When you delete your ShopEasy account, all your order history, wish lists, reviews, and saved data will be permanently removed. This action is irreversible, so please ensure that you have completed or cancelled any active orders before proceeding with the deletion.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What warranty does a ShopEasy Renewed product come with?",
+      "expected_output": "ShopEasy Renewed products come with a minimum 90-day supplier-backed warranty or the ShopEasy Renewed Guarantee. If the product does not work as expected, ShopEasy offers a replacement or refund within 90 days.",
+      "actual_output": "A ShopEasy Renewed product comes with a minimum 90-day supplier-backed warranty or ShopEasy Renewed Guarantee.",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    },
+    {
+      "input": "What are my rights if I receive a ShopEasy item that doesn't match its listed condition?",
+      "expected_output": "If you receive an item that does not match its listed condition, you are entitled to a full refund including return shipping costs, a free replacement of the same item, an A-to-Z Guarantee claim if the seller is unresponsive, or escalation to ShopEasy's specialist team for complex cases.",
+      "actual_output": "If you receive an item from ShopEasy that doesn't match its listed condition, you are entitled to:\n\n- A full refund, including return shipping costs.\n- A free replacement of the same item.\n- An A-to-Z Guarantee claim if the seller is unresponsive.\n- Escalation to ShopEasy's specialist team for complex cases.\n\nIf you need further assistance, feel free to ask!",
+      "scores": {
+        "FaithfulnessMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because there are no contradictions between the actual output and the retrieval context, so the response appears fully faithful and accurate."
+        },
+        "AnswerRelevancyMetric": {
+          "score": 0.8,
+          "passed": true,
+          "reason": "The score is 0.80 because the response is mostly relevant to the question about rights for a misdescribed ShopEasy item, but it includes a generic offer of help that does not add any specific information about the user's rights. That extra irrelevant statement keeps the score from being higher, while the rest of the answer still addresses the topic well enough to merit a strong score."
+        },
+        "ContextualRecallMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because sentence 1 is fully supported by node 1 in retrieval context, which directly states the full refund, free replacement, A-to-Z Guarantee claim, and escalation options with no missing details. Great match!"
+        },
+        "ContextualPrecisionMetric": {
+          "score": 1.0,
+          "passed": true,
+          "reason": "The score is 1.00 because the relevant nodes in retrieval contexts are ranked first and second, with clear support such as \"Customers who receive an item that does not match its listed condition are entitled to: A full refund including return shipping costs, A free replacement of the same item\" and \"Item received is materially different from what was described\". The irrelevant node in retrieval contexts is already pushed to rank 3, and its content is only general background like \"This document defines condition categories, listing standards, and customer rights related to product condition,\" so it does not need to be ranked higher than the directly useful nodes."
+        }
+      }
+    }
+  ]
+}

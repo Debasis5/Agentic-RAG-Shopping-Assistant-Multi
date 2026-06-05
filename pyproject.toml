@@ -21,4 +21,5 @@ dependencies = [
     "streamlit>=1.40.0",
     "requests>=2.32.0",
     "matplotlib>=3.10.9",
+    "deepeval>=1.0.0",
 ]
