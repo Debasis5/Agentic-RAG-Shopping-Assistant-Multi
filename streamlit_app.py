@@ -79,21 +79,25 @@ st.markdown("""
     margin: 0.25rem 0 !important;
   }
 
-  /* Sticky top bar — fixed, full width; Streamlit's main column already
-     sits to the right of the sidebar so we don't need a hardcoded left offset. */
+  /* Fixed top bar — stays visible as chat scrolls.
+     Left offset matches Streamlit's sidebar width (244px) so it never overlaps. */
   .top-sticky {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 244px;
+    right: 0;
     z-index: 999;
     background-color: #f3f3f3;
     padding: 6px 2rem 4px 2rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    overflow: hidden;
-    margin-left: -2rem;
-    margin-right: -2rem;
   }
   @media (prefers-color-scheme: dark) {
     .top-sticky { background-color: #0e1117; }
+  }
+
+  /* Push the page content down so it starts below the fixed header */
+  section[data-testid="stMain"] .block-container {
+    padding-top: 150px !important;
   }
 
   /* Aria header bar */
@@ -333,7 +337,8 @@ st.markdown(f"""
     </div>
   </div>
   {chips_html}
-</div>""", unsafe_allow_html=True)
+</div>
+<div style="height: 150px;"></div>""", unsafe_allow_html=True)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
