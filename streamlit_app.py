@@ -22,8 +22,16 @@ st.markdown("""
   }
 
   .block-container {
-    padding-top: 10rem !important;
+    padding-top: 0 !important;
     padding-bottom: 0 !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
+  }
+
+  /* Remove Streamlit's default top gap on the main area */
+  section[data-testid="stMain"] > div:first-child {
+    padding-top: 0 !important;
   }
 
 
@@ -71,20 +79,18 @@ st.markdown("""
     margin: 0.25rem 0 !important;
   }
 
-  /* Sticky top bar — fixed, starts after sidebar */
+  /* Sticky top bar — fixed, full width; Streamlit's main column already
+     sits to the right of the sidebar so we don't need a hardcoded left offset. */
   .top-sticky {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 244px;
-    right: 0;
     z-index: 999;
-    background-color: var(--background-color, transparent);
-    padding: 6px 1rem 4px 1rem;
+    background-color: #f3f3f3;
+    padding: 6px 2rem 4px 2rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     overflow: hidden;
-  }
-  @media (prefers-color-scheme: light) {
-    .top-sticky { background-color: #f3f3f3; }
+    margin-left: -2rem;
+    margin-right: -2rem;
   }
   @media (prefers-color-scheme: dark) {
     .top-sticky { background-color: #0e1117; }

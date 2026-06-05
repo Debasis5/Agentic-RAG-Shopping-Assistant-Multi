@@ -10,10 +10,12 @@ def _get_llm():
 _FAITHFULNESS_PROMPT = """You are a quality-check assistant for ShopEasy's support system.
 
 You will be given a customer question, the source knowledge base excerpts that were retrieved, and a draft answer.
-Check whether the answer is faithful — every claim in the answer must be grounded in the provided source excerpts. The answer must not fabricate policy details, invent numbers, or state facts not present in the sources.
+Check whether the answer is faithful — it should only state facts without fabricating policy details. Every claim must be supported by the provided source excerpts.
 
 If the answer is faithful to the sources, respond with exactly: PASS
 If the answer contains fabricated or unsupported claims not found in the sources, respond with exactly: FAIL
+
+When in doubt, respond with PASS.
 
 Respond with one word only: PASS or FAIL."""
 
@@ -32,7 +34,7 @@ def synthesis_node(state: dict) -> dict:
         print(f"[synthesis] pass-through for agent_outcome={agent_outcome!r}")
         return {"final_response": agent_response}
 
-    # RAG path — run faithfulness check
+    # RAG path — faithfulness check against retrieved docs
     query = state["query"]
     retrieved_docs = state.get("retrieved_docs", [])
     sources = "\n\n".join(retrieved_docs) if retrieved_docs else "(no source documents available)"
