@@ -1,10 +1,11 @@
+import os
 import re
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
 import json
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="Aria – ShopEasy",
