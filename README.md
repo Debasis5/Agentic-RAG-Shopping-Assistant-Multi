@@ -253,6 +253,52 @@ uv run python main.py
 
 ---
 
+## Docker Deployment
+
+The application is published as a single Docker image to Docker Hub at `dockerdebp/shopeasy-aria`.
+
+### Build and push (local)
+
+```bash
+# Build
+docker build -t dockerdebp/shopeasy-aria:latest .
+
+# Push to Docker Hub
+docker push dockerdebp/shopeasy-aria:latest
+```
+
+### Deploy on AWS EC2
+
+SSH into your instance, then:
+
+```bash
+# Pull latest image
+docker pull dockerdebp/shopeasy-aria:latest
+
+# Start containers in background
+docker compose up -d
+```
+
+### Ports
+
+| Service | Port |
+|---------|------|
+| FastAPI backend | 8000 |
+| Streamlit frontend | 8501 |
+
+Ensure both ports are open in your EC2 security group inbound rules.
+
+### Health check
+
+```bash
+curl http://<your-ec2-ip>:8000/health
+# → {"status": "ok"}
+```
+
+> Full step-by-step guide including volume and `.env` notes: [`projectdocs/docker_deployment.md`](projectdocs/docker_deployment.md)
+
+---
+
 ## API Reference
 
 | Method | Endpoint | Description |

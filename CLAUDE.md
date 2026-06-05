@@ -22,18 +22,41 @@ uv run python main.py
 # One-time setup: generate policy PDFs then ingest into ChromaDB
 uv run python scripts/generate_docs.py
 uv run python pipelines/ingest_docs.py
+
+# Run RAG evaluation (DeepEval)
+uv run python eval/run_eval.py
 ```
 
 No test suite or linter is configured in this project.
+
+## Docker
+
+The application is containerised as a single image (`dockerdebp/shopeasy-aria`). See `projectdocs/docker_deployment.md` for the full guide.
+
+```bash
+# Build image locally
+docker build -t dockerdebp/shopeasy-aria:latest .
+
+# Push to Docker Hub
+docker push dockerdebp/shopeasy-aria:latest
+
+# On AWS EC2 — pull and restart
+docker pull dockerdebp/shopeasy-aria:latest
+docker compose up -d
+```
+
+**Ports:** FastAPI backend on `8000`, Streamlit frontend on `8501`.  
+**Health check:** `GET /health` on port 8000 returns `{"status": "ok"}`.  
+**Volume:** `chroma_db/` is declared as a Docker volume — vector store data persists across restarts.  
+**Env:** The `.env` file must exist on the host; it is not baked into the image. Ensure `docker-compose.yml` has `env_file: .env`.
 
 ## Architecture
 
 This is a two-process application: a **FastAPI backend** (`api.py`) and a **Streamlit frontend** (`streamlit_app.py`). They communicate via HTTP — the frontend POSTs to `/chat` and receives a Server-Sent Events stream of tokens.
 
-### Target architecture: supervisor-orchestrator multi-agent (`src/`)
+### Architecture: supervisor-orchestrator multi-agent (`src/`)
 
-> **Migration in progress** — see `PLANNING.md` for step-by-step status.
-> The original single-graph pipeline is being replaced with a supervisor + sub-agent design.
+> Migration is complete. The supervisor + sub-agent design is the current and only pipeline.
 
 ```
 User query
@@ -112,16 +135,11 @@ After migration, the streamed node names will change — `synthesis` replaces `r
 
 ChromaDB persists locally at `chroma_db/` (relative to project root). The collection is named `support_docs`. Documents come from PDFs in `data/docs/` chunked at 1000 chars. The RAG node retrieves top-3 chunks.
 
-### Streamlit sidebar (known behaviour)
+### Streamlit UI (known behaviours)
 
-Streamlit 1.58 hides the sidebar via a CSS transform when `aria-expanded="false"` on `section[data-testid="stSidebar"]`. The fix in `streamlit_app.py` uses:
-```css
-section[data-testid="stSidebar"][aria-expanded="false"] {
-  margin-left: 0 !important;
-  transform: none !important;
-}
-```
-The collapse button is hidden via `div[data-testid="stSidebarCollapseButton"] { display: none !important; }`. Do not set `background-color` or `color` on sidebar elements — it causes invisible (white-on-white) text.
+**Sidebar always visible:** Streamlit 1.58 hides the sidebar via a CSS `translateX` when `aria-expanded="false"`. The fix forces `transform: translateX(0)` and hides the collapse/reopen buttons. Do not set `background-color` or `color` on sidebar elements — it causes invisible (white-on-white) text.
+
+**Fixed Aria header:** The `.top-sticky` bar uses `position: fixed` (not `sticky`) so it stays pinned as chat messages scroll. It is offset `left: 244px` to clear the sidebar. A `height: 150px` spacer `div` is injected after the header in the normal document flow so the first message is not hidden beneath it. If the header height changes, adjust both the spacer height and the `padding-top` on `.block-container`.
 
 ## Environment
 
