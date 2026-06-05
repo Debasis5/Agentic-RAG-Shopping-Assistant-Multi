@@ -20,7 +20,10 @@ def _rag_agent_node(state: SupervisorState) -> dict:
         "retrieved_docs": [],
         "agent_response": "",
     })
-    return {"agent_response": result["agent_response"]}
+    return {
+        "agent_response": result["agent_response"],
+        "retrieved_docs": result.get("retrieved_docs", []),
+    }
 
 
 def _order_agent_node(state: SupervisorState) -> dict:

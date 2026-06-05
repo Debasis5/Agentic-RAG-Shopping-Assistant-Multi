@@ -9,4 +9,5 @@ class SupervisorState(TypedDict):
     guardrail_decision: str   # "PASS" | "BLOCK"
     agent_outcome: str        # "rag" | "order" | "escalation" | "chitchat"
     agent_response: str       # raw response from the sub-agent
+    retrieved_docs: list[str] # source chunks from RAG agent (for faithfulness check)
     final_response: str       # after synthesis

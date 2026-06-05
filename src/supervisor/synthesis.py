@@ -9,11 +9,11 @@ def _get_llm():
 
 _FAITHFULNESS_PROMPT = """You are a quality-check assistant for ShopEasy's support system.
 
-You will be given a customer question and a draft answer generated from a knowledge base.
-Check whether the answer is faithful — it should only state facts that are grounded in the answer itself, without fabricating policy details.
+You will be given a customer question, the source knowledge base excerpts that were retrieved, and a draft answer.
+Check whether the answer is faithful — every claim in the answer must be grounded in the provided source excerpts. The answer must not fabricate policy details, invent numbers, or state facts not present in the sources.
 
-If the answer is faithful, respond with exactly: PASS
-If the answer contains fabricated or unsupported claims, respond with exactly: FAIL
+If the answer is faithful to the sources, respond with exactly: PASS
+If the answer contains fabricated or unsupported claims not found in the sources, respond with exactly: FAIL
 
 Respond with one word only: PASS or FAIL."""
 
@@ -34,9 +34,11 @@ def synthesis_node(state: dict) -> dict:
 
     # RAG path — run faithfulness check
     query = state["query"]
+    retrieved_docs = state.get("retrieved_docs", [])
+    sources = "\n\n".join(retrieved_docs) if retrieved_docs else "(no source documents available)"
     check = _get_llm().invoke([
         {"role": "system", "content": _FAITHFULNESS_PROMPT},
-        {"role": "user", "content": f"Question: {query}\n\nAnswer: {agent_response}"},
+        {"role": "user", "content": f"Sources:\n{sources}\n\nQuestion: {query}\n\nAnswer: {agent_response}"},
     ])
     verdict = check.content.strip().upper()
     print(f"[synthesis] faithfulness verdict={verdict!r}")
