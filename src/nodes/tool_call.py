@@ -19,8 +19,8 @@ def get_order_status(order_id: str) -> str:
     return json.dumps({
         "order_id": order_id,
         "status": status,
-        "estimated_delivery": "June 6, 2026" if status not in ("Delivered", "Cancelled") else None,
-        "last_updated": "June 3, 2026 10:30 AM",
+        "estimated_delivery": "June 11, 2026" if status not in ("Delivered", "Cancelled") else None,
+        "last_updated": "June 5, 2026 10:30 AM",
     })
 
 
@@ -33,7 +33,7 @@ def track_shipment(order_id: str) -> str:
         "awb_number": f"SHL{random.randint(100000000, 999999999)}",
         "current_location": "Mumbai Hub",
         "status": "In Transit",
-        "estimated_delivery": "June 6, 2026",
+        "estimated_delivery": "June 13, 2026",
     })
 
 
@@ -60,7 +60,7 @@ def get_return_status(order_id: str) -> str:
         "return_status": status,
         "refund_amount": f"₹{random.randint(200, 5000)}",
         "refund_method": "Original Payment Method",
-        "expected_refund_date": "June 8, 2026" if status != "Refund Processed" else "June 2, 2026",
+        "expected_refund_date": "June 09, 2026" if status != "Refund Processed" else "June 6, 2026",
     })
 
 
